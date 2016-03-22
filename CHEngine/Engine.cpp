@@ -1,11 +1,8 @@
 #include "Engine.h"
 
-
-
 Engine::Engine()
 {
 }
-
 
 Engine::~Engine()
 {
@@ -37,6 +34,8 @@ bool Engine::init()
 
 bool Engine::bufferModel()
 {
+	// ----------------------------- Test Object -----------------------------
+
 	//Vector holding our vertecies
 	std::vector<glm::vec3> locs = { 
 		{ 0.9, 0.9, 0 },	//top-right
@@ -110,4 +109,16 @@ bool Engine::gameLoop()
 	glfwTerminate();
 
 	return true;
+}
+
+bool Engine::useShaders()
+{
+	if (shaderManager.loadShaders("Shaders/vShader.glsl", "Shaders/fShader.glsl"))
+	{
+		glUseProgram(shaderManager.getProgram());
+
+		return true;
+	}
+
+	return false;
 }

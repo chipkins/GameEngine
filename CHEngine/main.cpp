@@ -7,7 +7,10 @@ int main()
 	if (!engine.init()) { return -1; }
 	if (!engine.bufferModel()) { return -1; }
 
-	engine.gameLoop();
+	if (engine.useShaders())
+	{
+		engine.gameLoop();
+	}
 
 	return 0;
 }

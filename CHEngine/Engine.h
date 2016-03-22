@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "ShaderManager.h"
 
 //OpenGL Includes
 #include <GL/glew.h>
@@ -18,11 +19,14 @@ public:
 	bool init();
 	bool bufferModel();
 	bool gameLoop();
+	bool useShaders();
 
 private:
 	GLFWwindow* GLFWwindowPtr;
 	GLuint vertArr; //holds numbers identifying the array
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
+
+	ShaderManager shaderManager;
 };
 
