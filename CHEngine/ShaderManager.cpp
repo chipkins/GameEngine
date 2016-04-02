@@ -120,6 +120,4 @@ GLuint ShaderManager::loadShader(const char * file, GLenum shaderType)
 		cout << "The shader file " << shaderType << " could not be loaded." << endl;
 		return 0;
 	}
-
-	return GLuint();
 }

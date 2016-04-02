@@ -4,7 +4,7 @@
 //#include <GLFW/glfw3.h>
 //#include <glm/glm.hpp>
 //#include <glm/gtx/transform.hpp>
-//#include <FreeImage.h>
+#include <FreeImage.h>
 
 class ShaderManager
 {
@@ -20,4 +20,3 @@ public:
 private:
 	GLuint program;
 };
-

@@ -20,13 +20,14 @@ public:
 	bool bufferModel();
 	bool gameLoop();
 	bool useShaders();
+	void uploadTextures();
 
 private:
 	GLFWwindow* GLFWwindowPtr;
 	GLuint vertArr; //holds numbers identifying the array
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
+	GLuint texInt;
 
 	ShaderManager shaderManager;
 };
-
