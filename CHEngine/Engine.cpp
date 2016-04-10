@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include <iostream>
+//#include <glm/gtx/transform.hpp>
 
 using glm::vec2;
 using glm::vec3;
@@ -11,6 +12,36 @@ namespace
 		vec3 loc;
 		vec2 uv;
 	};
+
+	struct Transform
+	{
+		vec3 location;
+		vec3 rotation;
+		vec3 scale;
+		glm::mat4 objToWorld;
+	};
+
+	struct Object
+	{
+		Transform transform;
+		char* texture;
+	};
+
+	std::vector<Object> objs;
+
+	typedef void(*Engine::*boundFunc)(int);
+	std::map<int, boundFunc> keybinds;
+	std::map<int, bool> keyIsDown;
+	std::map<int, bool> keyWasDown;
+
+	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
+	{
+		keyIsDown[button] = action;
+	}
+	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
+	{
+		keyIsDown[key] = action;
+	}
 }
 
 Engine::Engine()
@@ -19,7 +50,10 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-	glDeleteTextures(1, &texInt);
+	for (unsigned int i = 0; i < textures.size(); i++)
+	{
+		glDeleteTextures(1, &textures[objs[i].texture]);
+	}
 }
 
 bool Engine::init()
@@ -35,6 +69,9 @@ bool Engine::init()
 		glfwTerminate();
 		return false;
 	}
+
+	glfwSetMouseButtonCallback(GLFWwindowPtr, mouseClick);
+	glfwSetKeyCallback(GLFWwindowPtr, keyCallback);
 
 	// ----------------------------- Initialize a GLEW or Quit -----------------------------
 	if (glewInit() != GLEW_OK)
@@ -114,9 +151,6 @@ bool Engine::bufferModel()
 							//Set window color (only done once) - Cornflower Blue
 	glClearColor(0.392f, 0.584f, 0.929f, 1.0f);
 
-	//Load textures for the model
-	uploadTextures();
-
 	return true;
 }
 
@@ -130,17 +164,40 @@ bool Engine::gameLoop()
 		glClear(GL_COLOR_BUFFER_BIT); //Clear the canvas
 
 									  //Render game objects
-		glBindVertexArray(vertArr);
-		glBindTexture(GL_TEXTURE_2D, texInt);
-		glDrawArrays(GL_TRIANGLES, 0, vertCount);
-		glBindVertexArray(0); //Unbind object after drawing it
-		glBindTexture(GL_TEXTURE_2D, 0);
+		for (int i = 0; i < objs.size(); i++)
+		{
+			glm::mat4 locMat = glm::translate(objs[i].transform.location);
+			glm::mat4 rotMat = glm::yawPitchRoll(objs[i].transform.rotation.x, objs[i].transform.rotation.y, objs[i].transform.rotation.z);
+			glm::mat4 scaleMat = glm::scale(objs[i].transform.scale);
+			objs[i].transform.objToWorld = locMat * rotMat * scaleMat;
 
-							  //Swap the front and back buffers (what the screen displays and what GL draws, respectively)
+			glEnableVertexAttribArray(2);
+			glUniformMatrix4fv(2, 1, GL_FALSE, &objs[i].transform.objToWorld[0][0]);
+
+			glBindVertexArray(vertArr);
+			if (textures.size() > 0)
+			{
+				glBindTexture(GL_TEXTURE_2D, textures[objs[i].texture]);
+			}
+			glDrawArrays(GL_TRIANGLES, 0, vertCount);
+			glBindVertexArray(0); //Unbind object after drawing it
+		}
+
+		//Swap the front and back buffers (what the screen displays and what GL draws, respectively)
 		glfwSwapBuffers(GLFWwindowPtr);
 
-		//Process ------------
+		//Process Input ------------
+		keyWasDown = keyIsDown;
 		glfwPollEvents();
+
+		if (keyIsDown[GLFW_KEY_ESCAPE])
+		{
+			glfwSetWindowShouldClose(GLFWwindowPtr, GL_TRUE);
+		}
+		/*if (keyIsDown[GLFW_MOUSE_BUTTON_1] && !keyWasDown[GLFW_MOUSE_BUTTON_1])
+		{
+			texIndex + 1 < textures.size() ? texIndex++ : texIndex = 0;
+		}*/
 	}
 	
 
@@ -161,27 +218,29 @@ bool Engine::useShaders()
 	return false;
 }
 
-void Engine::uploadTextures()
+void Engine::uploadTexture(char* texFile)
 {
-	char* textFile = "Shaders/TestTexture.png";
 	//Load texture from file
-	FIBITMAP* image = FreeImage_Load(FreeImage_GetFileType(textFile, 0), textFile);
+	FIBITMAP* image = FreeImage_Load(FreeImage_GetFileType(texFile, 0), texFile);
 	if (image == nullptr)
 	{
 		std::cout << "The texture file could not be loaded." << std::endl;
 		return; //Texture failed to load
 	}
-
+	
 	//Convert image to a 32bit bmp
 	FIBITMAP* image32Bit = FreeImage_ConvertTo32Bits(image);
 	FreeImage_Unload(image); //Unloads the origional from memory
 
-	glGenTextures(1, &texInt); //Generate texture
-	if (texInt == GL_FALSE)
+	GLuint texID = 0;
+	glGenTextures(1, &texID); //Generate texture
+	if (texID == GL_FALSE)
 	{
 		return; //Failed to generate texture
 	}
-	glBindTexture(GL_TEXTURE_2D, texInt); //Bind texture
+	glBindTexture(GL_TEXTURE_2D, texID); //Bind texture
+
+	textures[texFile] = texID;
 
 	//Upload texture to VRAM
 	glTexImage2D(GL_TEXTURE_2D,
@@ -200,4 +259,20 @@ void Engine::uploadTextures()
 	//Unload the image from RAM
 	FreeImage_Unload(image32Bit);
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Engine::initObject(char* texFile, vec3 location, vec3 rotation, vec3 scale)
+{
+	Transform tran = Transform();
+	tran.location = location;
+	tran.rotation = rotation;
+	tran.scale = scale;
+
+	Object obj = Object();
+	obj.texture = texFile;
+	obj.transform = tran;
+
+	objs.push_back(obj);
+
+	uploadTexture(texFile);
 }
