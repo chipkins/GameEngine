@@ -13,7 +13,7 @@ int main()
 	engine.initObject("Textures/pigeon.png", glm::vec3(-0.5, -0.4, 0), glm::vec3(0, 0, 0), glm::vec3(0.1, 0.1, 1));
 	engine.initObject("Textures/pigeon.png", glm::vec3(0, 0.1, 0), glm::vec3(0, 0, 0), glm::vec3(0.1, 0.1, 1));
 	engine.initObject("Textures/pigeon.png", glm::vec3(0.5, 0.6, 0), glm::vec3(0, 0, 0), glm::vec3(0.1, 0.1, 1));
-	engine.initObject("Textures/shotgun.jpg", glm::vec3(0.25, -0.75, 0), glm::vec3(0, 0, 0), glm::vec3(0.25, 0.25, 1));
+	engine.initObject("Textures/shotgun2.png", glm::vec3(0.25, -0.75, 0), glm::vec3(0, 0, 0), glm::vec3(0.25, 0.25, 1));
 
 	if (engine.useShaders())
 	{

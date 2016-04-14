@@ -1,51 +1,12 @@
 #include "Engine.h"
 #include <iostream>
-//#include <glm/gtx/transform.hpp>
 
 using glm::vec2;
 using glm::vec3;
 
-namespace 
-{
-	struct Vertex
-	{
-		vec3 loc;
-		vec2 uv;
-	};
-
-	struct Transform
-	{
-		vec3 location;
-		vec3 rotation;
-		vec3 scale;
-		glm::mat4 objToWorld;
-	};
-
-	struct Object
-	{
-		Transform transform;
-		char* texture;
-	};
-
-	std::vector<Object> objs;
-
-	typedef void(*Engine::*boundFunc)(int);
-	std::map<int, boundFunc> keybinds;
-	std::map<int, bool> keyIsDown;
-	std::map<int, bool> keyWasDown;
-
-	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
-	{
-		keyIsDown[button] = action;
-	}
-	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
-	{
-		keyIsDown[key] = action;
-	}
-}
-
 Engine::Engine()
 {
+	inputManager = InputManager(this);
 }
 
 Engine::~Engine()
@@ -54,6 +15,11 @@ Engine::~Engine()
 	{
 		glDeleteTextures(1, &textures[objs[i].texture]);
 	}
+}
+
+GLFWwindow * Engine::getWindowPtr()
+{
+	return GLFWwindowPtr;
 }
 
 bool Engine::init()
@@ -70,8 +36,7 @@ bool Engine::init()
 		return false;
 	}
 
-	glfwSetMouseButtonCallback(GLFWwindowPtr, mouseClick);
-	glfwSetKeyCallback(GLFWwindowPtr, keyCallback);
+	
 
 	// ----------------------------- Initialize a GLEW or Quit -----------------------------
 	if (glewInit() != GLEW_OK)
@@ -79,6 +44,9 @@ bool Engine::init()
 		glfwTerminate();
 		return false;
 	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	return true;
 }
@@ -156,9 +124,19 @@ bool Engine::bufferModel()
 
 bool Engine::gameLoop()
 {
+	currentTime = glfwGetTime();
+	previousTime = currentTime;
+	deltaTime = currentTime - previousTime;
+
+
 	while (!glfwWindowShouldClose(GLFWwindowPtr))
 	{
 		// Update -----------
+		previousTime = currentTime;
+		currentTime = glfwGetTime();
+		deltaTime = currentTime - previousTime;
+
+
 
 		//Draw -----------
 		glClear(GL_COLOR_BUFFER_BIT); //Clear the canvas
@@ -187,17 +165,7 @@ bool Engine::gameLoop()
 		glfwSwapBuffers(GLFWwindowPtr);
 
 		//Process Input ------------
-		keyWasDown = keyIsDown;
-		glfwPollEvents();
-
-		if (keyIsDown[GLFW_KEY_ESCAPE])
-		{
-			glfwSetWindowShouldClose(GLFWwindowPtr, GL_TRUE);
-		}
-		/*if (keyIsDown[GLFW_MOUSE_BUTTON_1] && !keyWasDown[GLFW_MOUSE_BUTTON_1])
-		{
-			texIndex + 1 < textures.size() ? texIndex++ : texIndex = 0;
-		}*/
+		
 	}
 	
 
@@ -268,9 +236,15 @@ void Engine::initObject(char* texFile, vec3 location, vec3 rotation, vec3 scale)
 	tran.rotation = rotation;
 	tran.scale = scale;
 
+	Rigidbody body = Rigidbody();
+	body.mass = 1.0f;
+	body.velocity = vec3(0, 0, 0);
+	body.force = vec3(0, 0, 0);
+
 	Object obj = Object();
 	obj.texture = texFile;
 	obj.transform = tran;
+	obj.body = body;
 
 	objs.push_back(obj);
 

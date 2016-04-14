@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <map>
-#include "ShaderManager.h"
-
 //OpenGL Includes
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -12,11 +8,26 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <FreeImage.h>
 
+#include <vector>
+#include <map>
+#include "ShaderManager.h"
+#include "InputManager.h"
+#include "Vertex.h"
+#include "Object.h"
+
 class Engine
 {
 public:
 	Engine();
 	~Engine();
+
+	std::map<char*, GLuint> textures;
+	std::vector<Object> objs;
+	float currentTime;
+	float previousTime;
+	float deltaTime;
+
+	GLFWwindow* getWindowPtr();
 
 	bool init();
 	bool bufferModel();
@@ -30,7 +41,6 @@ private:
 	GLuint vertArr; //holds numbers identifying the array
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
-	std::map<char*, GLuint> textures;
-
 	ShaderManager shaderManager;
+	InputManager inputManager;
 };
