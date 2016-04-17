@@ -22,7 +22,8 @@ public:
 	~Engine();
 
 	std::map<char*, GLuint> textures;
-	std::vector<Object> objs;
+	std::map<std::string, Object> objs;
+	std::vector<std::string> objNames;
 	float currentTime;
 	float previousTime;
 	float deltaTime;
@@ -32,9 +33,10 @@ public:
 	bool init();
 	bool bufferModel();
 	bool gameLoop();
+	void update();
 	bool useShaders();
 	void uploadTexture(char* texFile);
-	void initObject(char* texFile, glm::vec3 location, glm::vec3 rotation, glm::vec3 scale);
+	void createObject(std::string name, char* texFile, glm::vec3 location, glm::vec3 rotation, glm::vec3 scale);
 
 private:
 	GLFWwindow* GLFWwindowPtr;
@@ -42,5 +44,5 @@ private:
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
 	ShaderManager shaderManager;
-	InputManager inputManager;
+	//InputManager inputManager;
 };

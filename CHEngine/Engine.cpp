@@ -4,16 +4,46 @@
 using glm::vec2;
 using glm::vec3;
 
+namespace
+{
+	glm::vec3 mouseLoc;
+	//typedef void(Engine::*boundFunc)(int);
+	//std::map<int, boundFunc> keybinds;
+	std::map<int, bool> keyIsDown;
+	std::map<int, bool> keyWasDown;
+	int winWidth;
+	int winHeight;
+
+	void mousePosition(GLFWwindow* windowPtr, double x, double y)
+	{
+		glfwGetWindowSize(windowPtr, &winWidth, &winHeight);
+		mouseLoc.x = (x / (winWidth / 2)) - 1;
+		mouseLoc.y = -((y / (winHeight / 2)) - 1);
+	}
+	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
+	{
+		keyIsDown[button] = action;
+	}
+	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
+	{
+		/*if (keybinds.count(key) != 0)
+		{
+			(this->*keybinds[key])(action);
+		}*/
+		keyIsDown[key] = action;
+	}
+}
+
 Engine::Engine()
 {
-	inputManager = InputManager(this);
+	//inputManager = InputManager(this);
 }
 
 Engine::~Engine()
 {
 	for (unsigned int i = 0; i < textures.size(); i++)
 	{
-		glDeleteTextures(1, &textures[objs[i].texture]);
+		glDeleteTextures(1, &textures[objs[objNames[i]].texture]);
 	}
 }
 
@@ -36,7 +66,9 @@ bool Engine::init()
 		return false;
 	}
 
-	
+	glfwSetCursorPosCallback(getWindowPtr(), mousePosition);
+	glfwSetMouseButtonCallback(getWindowPtr(), mouseClick);
+	glfwSetKeyCallback(getWindowPtr(), keyCallback);
 
 	// ----------------------------- Initialize a GLEW or Quit -----------------------------
 	if (glewInit() != GLEW_OK)
@@ -128,6 +160,7 @@ bool Engine::gameLoop()
 	previousTime = currentTime;
 	deltaTime = currentTime - previousTime;
 
+	objs["bullet"].active = false;
 
 	while (!glfwWindowShouldClose(GLFWwindowPtr))
 	{
@@ -136,42 +169,84 @@ bool Engine::gameLoop()
 		currentTime = glfwGetTime();
 		deltaTime = currentTime - previousTime;
 
-
+		for (int i = 0; i < objNames.size(); i++)
+		{
+			objs[objNames[i]].Update(deltaTime);
+		}
 
 		//Draw -----------
 		glClear(GL_COLOR_BUFFER_BIT); //Clear the canvas
 
 									  //Render game objects
-		for (int i = 0; i < objs.size(); i++)
+		for (int i = 0; i < objNames.size(); i++)
 		{
-			glm::mat4 locMat = glm::translate(objs[i].transform.location);
-			glm::mat4 rotMat = glm::yawPitchRoll(objs[i].transform.rotation.x, objs[i].transform.rotation.y, objs[i].transform.rotation.z);
-			glm::mat4 scaleMat = glm::scale(objs[i].transform.scale);
-			objs[i].transform.objToWorld = locMat * rotMat * scaleMat;
-
-			glEnableVertexAttribArray(2);
-			glUniformMatrix4fv(2, 1, GL_FALSE, &objs[i].transform.objToWorld[0][0]);
-
-			glBindVertexArray(vertArr);
-			if (textures.size() > 0)
+			if (objs[objNames[i]].active)
 			{
-				glBindTexture(GL_TEXTURE_2D, textures[objs[i].texture]);
+				glm::mat4 locMat = glm::translate(objs[objNames[i]].transform.location);
+				glm::mat4 rotMat = glm::yawPitchRoll(objs[objNames[i]].transform.rotation.x,
+										objs[objNames[i]].transform.rotation.y,
+										objs[objNames[i]].transform.rotation.z);
+				glm::mat4 scaleMat;
+				if (objNames[i] == "gun")
+				{
+					glm::vec3 gunScale = glm::vec3();
+					gunScale.x = objs[objNames[i]].transform.scale.x - (mouseLoc.x / 2.0f);
+					gunScale.y = objs[objNames[i]].transform.scale.y + ((mouseLoc.y + 1) / 5.0f);
+					gunScale.z = 1.0f;
+					scaleMat = glm::scale(gunScale);
+				}
+				else
+				{
+					scaleMat = glm::scale(objs[objNames[i]].transform.scale);
+				}
+				objs[objNames[i]].transform.objToWorld = locMat * rotMat * scaleMat;
+
+				glEnableVertexAttribArray(2);
+				glUniformMatrix4fv(2, 1, GL_FALSE, &objs[objNames[i]].transform.objToWorld[0][0]);
+
+				glBindVertexArray(vertArr);
+				if (textures.size() > 0)
+				{
+					glBindTexture(GL_TEXTURE_2D, textures[objs[objNames[i]].texture]);
+				}
+				glDrawArrays(GL_TRIANGLES, 0, vertCount);
+				glBindVertexArray(0); //Unbind object after drawing it
 			}
-			glDrawArrays(GL_TRIANGLES, 0, vertCount);
-			glBindVertexArray(0); //Unbind object after drawing it
 		}
 
 		//Swap the front and back buffers (what the screen displays and what GL draws, respectively)
 		glfwSwapBuffers(GLFWwindowPtr);
 
 		//Process Input ------------
-		
+		keyWasDown = keyIsDown;
+
+		glfwPollEvents();
+
+		if (keyIsDown[GLFW_KEY_ESCAPE])
+		{
+			glfwSetWindowShouldClose(getWindowPtr(), GL_TRUE);
+		}
+		if (keyIsDown[GLFW_MOUSE_BUTTON_1] && !keyWasDown[GLFW_MOUSE_BUTTON_1])
+		{
+			objs["bullet"].body.velocity = glm::vec3();
+			objs["bullet"].transform.location = glm::vec3(objs["gun"].transform.location.x - objs["gun"].transform.scale.x, 
+													objs["gun"].transform.location.y + objs["gun"].transform.scale.y, 
+													objs["gun"].transform.location.z);
+			glm::vec3 trajectory =  mouseLoc - objs["bullet"].transform.location;
+			objs["bullet"].body.force = glm::normalize(trajectory) * 500.0f;
+
+			objs["bullet"].active = true;
+		}
 	}
-	
 
 	glfwTerminate();
 
 	return true;
+}
+
+void Engine::update()
+{
+
 }
 
 bool Engine::useShaders()
@@ -229,7 +304,7 @@ void Engine::uploadTexture(char* texFile)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Engine::initObject(char* texFile, vec3 location, vec3 rotation, vec3 scale)
+void Engine::createObject(std::string name, char* texFile, vec3 location, vec3 rotation, vec3 scale)
 {
 	Transform tran = Transform();
 	tran.location = location;
@@ -237,7 +312,7 @@ void Engine::initObject(char* texFile, vec3 location, vec3 rotation, vec3 scale)
 	tran.scale = scale;
 
 	Rigidbody body = Rigidbody();
-	body.mass = 1.0f;
+	body.mass = 0.0f;
 	body.velocity = vec3(0, 0, 0);
 	body.force = vec3(0, 0, 0);
 
@@ -246,7 +321,8 @@ void Engine::initObject(char* texFile, vec3 location, vec3 rotation, vec3 scale)
 	obj.transform = tran;
 	obj.body = body;
 
-	objs.push_back(obj);
+	objNames.push_back(name);
+	objs[name] = obj;
 
 	uploadTexture(texFile);
 }

@@ -6,11 +6,11 @@ class InputManager
 {
 public:
 	InputManager();
-	InputManager(Engine* engine);
+	//InputManager(Engine* engine);
 	~InputManager();
 
-	Engine* engine;
+	//Engine* engine;
 
-	void ProcessInput();
+	//void ProcessInput();
 };
 
