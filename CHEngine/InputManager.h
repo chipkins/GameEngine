@@ -1,16 +1,21 @@
 #pragma once
 
-#include "Engine.h"
+//#include "Engine.h"
+#include <glm/glm.hpp>
+
+struct Engine;
 
 class InputManager
 {
 public:
 	InputManager();
-	//InputManager(Engine* engine);
+	InputManager(Engine* engine);
 	~InputManager();
 
-	//Engine* engine;
+	Engine* engine;
+	glm::vec3 mouseXY;
 
-	//void ProcessInput();
+	void setInput();
+	void ProcessInput();
 };
 

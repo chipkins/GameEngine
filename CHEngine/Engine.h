@@ -12,6 +12,7 @@
 #include <map>
 #include "ShaderManager.h"
 #include "InputManager.h"
+#include "PhysicsManager.h"
 #include "Vertex.h"
 #include "Object.h"
 
@@ -36,7 +37,7 @@ public:
 	void update();
 	bool useShaders();
 	void uploadTexture(char* texFile);
-	void createObject(std::string name, char* texFile, glm::vec3 location, glm::vec3 rotation, glm::vec3 scale);
+	void createObject(std::string name, char* texFile, glm::vec3 location, glm::vec3 rotation, glm::vec3 scale, ScreenMode mode);
 
 private:
 	GLFWwindow* GLFWwindowPtr;
@@ -44,5 +45,6 @@ private:
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
 	ShaderManager shaderManager;
-	//InputManager inputManager;
+	PhysicsManager physicsManager;
+	InputManager* inputManager;
 };

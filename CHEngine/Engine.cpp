@@ -4,39 +4,39 @@
 using glm::vec2;
 using glm::vec3;
 
-namespace
-{
-	glm::vec3 mouseLoc;
-	//typedef void(Engine::*boundFunc)(int);
-	//std::map<int, boundFunc> keybinds;
-	std::map<int, bool> keyIsDown;
-	std::map<int, bool> keyWasDown;
-	int winWidth;
-	int winHeight;
-
-	void mousePosition(GLFWwindow* windowPtr, double x, double y)
-	{
-		glfwGetWindowSize(windowPtr, &winWidth, &winHeight);
-		mouseLoc.x = (x / (winWidth / 2)) - 1;
-		mouseLoc.y = -((y / (winHeight / 2)) - 1);
-	}
-	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
-	{
-		keyIsDown[button] = action;
-	}
-	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
-	{
-		/*if (keybinds.count(key) != 0)
-		{
-			(this->*keybinds[key])(action);
-		}*/
-		keyIsDown[key] = action;
-	}
-}
+//namespace
+//{
+//	glm::vec3 mouseLoc;
+//	//typedef void(Engine::*boundFunc)(int);
+//	//std::map<int, boundFunc> keybinds;
+//	std::map<int, bool> keyIsDown;
+//	std::map<int, bool> keyWasDown;
+//	int winWidth;
+//	int winHeight;
+//
+//	void mousePosition(GLFWwindow* windowPtr, double x, double y)
+//	{
+//		glfwGetWindowSize(windowPtr, &winWidth, &winHeight);
+//		mouseLoc.x = (x / (winWidth / 2)) - 1;
+//		mouseLoc.y = -((y / (winHeight / 2)) - 1);
+//	}
+//	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
+//	{
+//		keyIsDown[button] = action;
+//	}
+//	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
+//	{
+//		/*if (keybinds.count(key) != 0)
+//		{
+//			(this->*keybinds[key])(action);
+//		}*/
+//		keyIsDown[key] = action;
+//	}
+//}
 
 Engine::Engine()
 {
-	//inputManager = InputManager(this);
+	inputManager = new InputManager(this);
 }
 
 Engine::~Engine()
@@ -45,6 +45,7 @@ Engine::~Engine()
 	{
 		glDeleteTextures(1, &textures[objs[objNames[i]].texture]);
 	}
+	delete inputManager;
 }
 
 GLFWwindow * Engine::getWindowPtr()
@@ -66,9 +67,10 @@ bool Engine::init()
 		return false;
 	}
 
-	glfwSetCursorPosCallback(getWindowPtr(), mousePosition);
+	/*glfwSetCursorPosCallback(getWindowPtr(), inputManager.mousePosition);
 	glfwSetMouseButtonCallback(getWindowPtr(), mouseClick);
-	glfwSetKeyCallback(getWindowPtr(), keyCallback);
+	glfwSetKeyCallback(getWindowPtr(), keyCallback);*/
+	inputManager->setInput();
 
 	// ----------------------------- Initialize a GLEW or Quit -----------------------------
 	if (glewInit() != GLEW_OK)
@@ -174,6 +176,13 @@ bool Engine::gameLoop()
 			objs[objNames[i]].Update(deltaTime);
 		}
 
+		if (!objs["birdLow"].active && !objs["birdMid"].active && !objs["birdHigh"].active)
+		{
+			objs["birdLow"].active = true;
+			objs["birdMid"].active = true;
+			objs["birdHigh"].active = true;
+		}
+
 		//Draw -----------
 		glClear(GL_COLOR_BUFFER_BIT); //Clear the canvas
 
@@ -182,6 +191,21 @@ bool Engine::gameLoop()
 		{
 			if (objs[objNames[i]].active)
 			{
+				if (objNames[i] == "bullet")
+				{
+					for (int j = 0; j < objNames.size(); j++)
+					{
+						if (objs[objNames[j]].active)
+						{
+							if (physicsManager.CheckCollision(&objs[objNames[i]], &objs[objNames[j]]))
+							{
+								objs[objNames[i]].active = false;
+								objs[objNames[j]].active = false;
+							}
+						}
+					}
+				}
+
 				glm::mat4 locMat = glm::translate(objs[objNames[i]].transform.location);
 				glm::mat4 rotMat = glm::yawPitchRoll(objs[objNames[i]].transform.rotation.x,
 										objs[objNames[i]].transform.rotation.y,
@@ -190,8 +214,8 @@ bool Engine::gameLoop()
 				if (objNames[i] == "gun")
 				{
 					glm::vec3 gunScale = glm::vec3();
-					gunScale.x = objs[objNames[i]].transform.scale.x - (mouseLoc.x / 2.0f);
-					gunScale.y = objs[objNames[i]].transform.scale.y + ((mouseLoc.y + 1) / 5.0f);
+					gunScale.x = objs[objNames[i]].transform.scale.x - (inputManager->mouseXY.x / 2.0f);
+					gunScale.y = objs[objNames[i]].transform.scale.y + ((inputManager->mouseXY.y + 1) / 5.0f);
 					gunScale.z = 1.0f;
 					scaleMat = glm::scale(gunScale);
 				}
@@ -218,7 +242,8 @@ bool Engine::gameLoop()
 		glfwSwapBuffers(GLFWwindowPtr);
 
 		//Process Input ------------
-		keyWasDown = keyIsDown;
+		inputManager->ProcessInput();
+		/*keyWasDown = keyIsDown;
 
 		glfwPollEvents();
 
@@ -236,7 +261,7 @@ bool Engine::gameLoop()
 			objs["bullet"].body.force = glm::normalize(trajectory) * 500.0f;
 
 			objs["bullet"].active = true;
-		}
+		}*/
 	}
 
 	glfwTerminate();
@@ -304,7 +329,7 @@ void Engine::uploadTexture(char* texFile)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Engine::createObject(std::string name, char* texFile, vec3 location, vec3 rotation, vec3 scale)
+void Engine::createObject(std::string name, char* texFile, vec3 location, vec3 rotation, vec3 scale, ScreenMode mode)
 {
 	Transform tran = Transform();
 	tran.location = location;
@@ -320,6 +345,8 @@ void Engine::createObject(std::string name, char* texFile, vec3 location, vec3 r
 	obj.texture = texFile;
 	obj.transform = tran;
 	obj.body = body;
+
+	obj.screenMode = mode;
 
 	objNames.push_back(name);
 	objs[name] = obj;
