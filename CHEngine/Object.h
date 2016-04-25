@@ -31,7 +31,7 @@ public:
 	bool active;
 	ScreenMode screenMode;
 
-	void initPhysics(Type type, glm::vec3 v, glm::vec3 f, float d);
+	void initPhysics(Shape::Type type, glm::vec3 v, glm::vec3 f, float d);
 	void Update(float dT);
 
 	void ScreenWrap();

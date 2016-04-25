@@ -1,55 +1,68 @@
 #include "PhysicsManager.h"
 #include "Shape.h"
 
-PhysicsManager::PhysicsManager()
+CollisionCallback Dispatch[Shape::count][Shape::count] =
 {
-}
-
-PhysicsManager::~PhysicsManager()
-{
-}
-
-bool PhysicsManager::CheckCollision(Object * a, Object * b)
-{
-	if (a->body.shape->GetType() == noCollide)
 	{
-		return false;
-	}
-	else if (a->body.shape->GetType() == aabb)
+		&AABBvsAABB, &AABBvsCircle, &NoCollision
+	},
 	{
-		if (b->body.shape->GetType() == noCollide)
-		{
-			return false;
-		}
-		else if (b->body.shape->GetType() == aabb)
-		{
-			return AABBvsAABB(a, b);
-		}
-		else if (b->body.shape->GetType() == circle)
-		{
-			return AABBvsCircle(a, b);
-		}
-	}
-	else if (a->body.shape->GetType() == circle)
+		&CirclevsAABB, &CirclevsCircle, &NoCollision
+	},
 	{
-		if (b->body.shape->GetType() == noCollide)
-		{
-			return false;
-		}
-		else if (b->body.shape->GetType() == aabb)
-		{
-			return CirclevsAABB(a, b);
-		}
-		else if (b->body.shape->GetType() == circle)
-		{
-			return CirclevsCircle(a, b);
-		}
+		&NoCollision, &NoCollision, &NoCollision
 	}
+};
 
-	return false;
-}
+//PhysicsManager::PhysicsManager()
+//{
+//}
+//
+//PhysicsManager::~PhysicsManager()
+//{
+//}
 
-bool PhysicsManager::AABBvsAABB(Object* a, Object* b)
+//bool PhysicsManager::CheckCollision(Object * a, Object * b)
+//{
+//	if (a->body.shape->GetType() == Shape::noCollide)
+//	{
+//		return false;
+//	}
+//	else if (a->body.shape->GetType() == Shape::aabb)
+//	{
+//		if (b->body.shape->GetType() == Shape::noCollide)
+//		{
+//			return false;
+//		}
+//		else if (b->body.shape->GetType() == Shape::aabb)
+//		{
+//			return AABBvsAABB(a, b);
+//		}
+//		else if (b->body.shape->GetType() == Shape::circle)
+//		{
+//			return AABBvsCircle(a, b);
+//		}
+//	}
+//	else if (a->body.shape->GetType() == Shape::circle)
+//	{
+//		if (b->body.shape->GetType() == Shape::noCollide)
+//		{
+//			return false;
+//		}
+//		else if (b->body.shape->GetType() == Shape::aabb)
+//		{
+//			return CirclevsAABB(a, b);
+//		}
+//		else if (b->body.shape->GetType() == Shape::circle)
+//		{
+//			return CirclevsCircle(a, b);
+//		}
+//	}
+//
+//	return false;
+//}
+
+bool AABBvsAABB(Object* a, Object* b)
 {
 	glm::vec3 vAB = b->transform.location - a->transform.location;
 	AABB* aShape = reinterpret_cast<AABB*>(a->body.shape);
@@ -75,7 +88,7 @@ bool PhysicsManager::AABBvsAABB(Object* a, Object* b)
 	return false;
 }
 
-bool PhysicsManager::CirclevsCircle(Object* a, Object* b)
+bool CirclevsCircle(Object* a, Object* b)
 {
 	glm::vec3 vAB = b->transform.location - a->transform.location;
 	Circle* aShape = reinterpret_cast<Circle*>(a->body.shape);
@@ -91,7 +104,7 @@ bool PhysicsManager::CirclevsCircle(Object* a, Object* b)
 	return false;
 }
 
-bool PhysicsManager::AABBvsCircle(Object* a, Object* b)
+bool AABBvsCircle(Object* a, Object* b)
 {
 	glm::vec3 vAB = b->transform.location - a->transform.location;
 	AABB* aShape = reinterpret_cast<AABB*>(a->body.shape);
@@ -117,7 +130,12 @@ bool PhysicsManager::AABBvsCircle(Object* a, Object* b)
 	return false;
 }
 
-bool PhysicsManager::CirclevsAABB(Object* a, Object* b)
+bool CirclevsAABB(Object* a, Object* b)
 {
 	return AABBvsCircle(b, a);
+}
+
+bool NoCollision(Object* a, Object* b)
+{
+	return false;
 }

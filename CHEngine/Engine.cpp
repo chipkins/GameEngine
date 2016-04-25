@@ -197,7 +197,8 @@ bool Engine::gameLoop()
 					{
 						if (objs[objNames[j]].active)
 						{
-							if (physicsManager.CheckCollision(&objs[objNames[i]], &objs[objNames[j]]))
+							if ((*Dispatch[objs[objNames[i]].body.shape->GetType()][objs[objNames[j]].body.shape->GetType()])(&objs[objNames[i]], &objs[objNames[j]]))
+							//if (physicsManager.CheckCollision(&objs[objNames[i]], &objs[objNames[j]]))
 							{
 								objs[objNames[i]].active = false;
 								objs[objNames[j]].active = false;

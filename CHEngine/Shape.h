@@ -3,18 +3,19 @@
 #include "Rigidbody.h"
 #include "Vertex.h"
 
-enum Type
-{
-	aabb,
-	circle,
-	noCollide
-};
-
 struct Shape
 {
-	const Type type = noCollide;
+	enum Type
+	{
+		aabb,
+		circle,
+		noCollide,
+		count
+	};
+
+	Type type;
 	//Rigidbody* body;
-	Shape() {}
+	Shape() { type = noCollide; }
 	virtual Shape* Clone() { return new Shape; }
 	virtual void ComputeMass(Rigidbody* body, float density)
 	{
@@ -23,19 +24,21 @@ struct Shape
 	}
 	virtual Type GetType() const
 	{
-		return noCollide;
+		return type;
 	}
 };
 
 struct AABB : Shape
 {
-	const Type type = aabb;
 	glm::vec3 min;
 	glm::vec3 max;
 	glm::vec3 extent;
 
 	AABB(glm::vec3 min, glm::vec3 max)
 	{
+		type = aabb;
+		this->min = min;
+		this->max = max;
 		extent = (max - min) / 2.0f;
 	}
 
@@ -53,17 +56,17 @@ struct AABB : Shape
 
 	Type GetType() const override
 	{
-		return aabb;
+		return type;
 	}
 };
 
 struct Circle : Shape
 {
-	const Type type = circle;
 	float radius;
 
 	Circle(float r)
 	{
+		type = circle;
 		radius = r;
 	}
 
@@ -81,6 +84,6 @@ struct Circle : Shape
 
 	Type GetType() const override
 	{
-		return circle;
+		return type;
 	}
 };

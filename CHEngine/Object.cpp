@@ -10,16 +10,16 @@ Object::~Object()
 
 }
 
-void Object::initPhysics(Type type, glm::vec3 v, glm::vec3 f, float d)
+void Object::initPhysics(Shape::Type type, glm::vec3 v, glm::vec3 f, float d)
 {
 	Shape* shape = new Shape();
-	if (type == aabb)
+	if (type == Shape::aabb)
 	{
 		glm::vec3 min = transform.location - transform.scale;
 		glm::vec3 max = transform.location + transform.scale;
 		shape = new AABB(min, max);
 	}
-	else if (type == circle)
+	else if (type == Shape::circle)
 	{
 		float radius = transform.scale.y;
 		shape = new Circle(radius);

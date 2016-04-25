@@ -45,6 +45,6 @@ private:
 	GLuint vertBuf; //holds numbers identifying the buffer
 	unsigned int vertCount;
 	ShaderManager shaderManager;
-	PhysicsManager physicsManager;
+	//PhysicsManager physicsManager;
 	InputManager* inputManager;
 };
