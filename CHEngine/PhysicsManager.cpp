@@ -14,54 +14,6 @@ CollisionCallback Dispatch[Shape::count][Shape::count] =
 	}
 };
 
-//PhysicsManager::PhysicsManager()
-//{
-//}
-//
-//PhysicsManager::~PhysicsManager()
-//{
-//}
-
-//bool PhysicsManager::CheckCollision(Object * a, Object * b)
-//{
-//	if (a->body.shape->GetType() == Shape::noCollide)
-//	{
-//		return false;
-//	}
-//	else if (a->body.shape->GetType() == Shape::aabb)
-//	{
-//		if (b->body.shape->GetType() == Shape::noCollide)
-//		{
-//			return false;
-//		}
-//		else if (b->body.shape->GetType() == Shape::aabb)
-//		{
-//			return AABBvsAABB(a, b);
-//		}
-//		else if (b->body.shape->GetType() == Shape::circle)
-//		{
-//			return AABBvsCircle(a, b);
-//		}
-//	}
-//	else if (a->body.shape->GetType() == Shape::circle)
-//	{
-//		if (b->body.shape->GetType() == Shape::noCollide)
-//		{
-//			return false;
-//		}
-//		else if (b->body.shape->GetType() == Shape::aabb)
-//		{
-//			return CirclevsAABB(a, b);
-//		}
-//		else if (b->body.shape->GetType() == Shape::circle)
-//		{
-//			return CirclevsCircle(a, b);
-//		}
-//	}
-//
-//	return false;
-//}
-
 bool AABBvsAABB(Object* a, Object* b)
 {
 	glm::vec3 vAB = b->transform.location - a->transform.location;

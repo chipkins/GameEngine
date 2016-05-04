@@ -5,10 +5,10 @@
 
 enum ScreenMode
 {
+	none,
 	wrap,
 	bounce,
-	destroy,
-	none
+	destroy
 };
 
 struct Transform
@@ -32,11 +32,9 @@ public:
 	ScreenMode screenMode;
 
 	void initPhysics(Shape::Type type, glm::vec3 v, glm::vec3 f, float d);
-	void Update(float dT);
+	virtual void Update(float dT);
 
 	void ScreenWrap();
 	void ScreenBounce();
 	void ScreenDestroy();
-
-private:
 };

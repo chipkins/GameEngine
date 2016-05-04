@@ -4,10 +4,11 @@
 namespace
 {
 	glm::vec3 mouseLoc;
-	//typedef void(Engine::*boundFunc)(int);
-	//std::map<int, boundFunc> keybinds;
-	std::map<int, bool> keyIsDown;
-	std::map<int, bool> keyWasDown;
+	glm::vec3 mousePix;
+	typedef void(Engine::*boundFunc)(int);
+	std::map<int, boundFunc> keybinds;
+	/*std::map<int, bool> keyIsDown;
+	std::map<int, bool> keyWasDown;*/
 	int winWidth;
 	int winHeight;
 
@@ -19,15 +20,21 @@ namespace
 	}
 	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
 	{
-		keyIsDown[button] = action;
+		Engine* engine = static_cast<Engine*>(glfwGetWindowUserPointer(windowPtr));
+		if (keybinds.count(button) != 0)
+		{
+			(engine->*keybinds[button])(action);
+		}
+		//keyIsDown[button] = action;
 	}
 	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
 	{
-		/*if (keybinds.count(key) != 0)
+		Engine* engine = static_cast<Engine*>(glfwGetWindowUserPointer(windowPtr));
+		if (keybinds.count(key) != 0)
 		{
-			(this->*keybinds[key])(action);
-		}*/
-		keyIsDown[key] = action;
+			(engine->*keybinds[key])(action);
+		}
+		//keyIsDown[key] = action;
 	}
 }
 
@@ -38,29 +45,34 @@ InputManager::InputManager()
 InputManager::InputManager(Engine* engine)
 {
 	this->engine = engine;
+	glfwSetWindowUserPointer(engine->getWindowPtr(), engine);
 }
 
 
 InputManager::~InputManager()
 {
-	
 }
 
-void InputManager::setInput()
+void InputManager::initInput()
 {
 	glfwSetCursorPosCallback(engine->getWindowPtr(), mousePosition);
 	glfwSetMouseButtonCallback(engine->getWindowPtr(), mouseClick);
 	glfwSetKeyCallback(engine->getWindowPtr(), keyCallback);
 }
 
+void InputManager::setInputFunc(int key, boundFunc func)
+{
+	keybinds[key] = func;
+}
+
 void InputManager::ProcessInput()
 {
-	keyWasDown = keyIsDown;
+	//keyWasDown = keyIsDown;
 	glfwPollEvents();
 
 	mouseXY = mouseLoc;
 
-	if (keyIsDown[GLFW_KEY_ESCAPE])
+	/*if (keyIsDown[GLFW_KEY_ESCAPE])
 	{
 		glfwSetWindowShouldClose(engine->getWindowPtr(), GL_TRUE);
 	}
@@ -74,5 +86,5 @@ void InputManager::ProcessInput()
 		engine->objs["bullet"].body.force = glm::normalize(trajectory) * 10.0f;
 
 		engine->objs["bullet"].active = true;
-	}
+	}*/
 }

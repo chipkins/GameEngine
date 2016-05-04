@@ -4,39 +4,10 @@
 using glm::vec2;
 using glm::vec3;
 
-//namespace
-//{
-//	glm::vec3 mouseLoc;
-//	//typedef void(Engine::*boundFunc)(int);
-//	//std::map<int, boundFunc> keybinds;
-//	std::map<int, bool> keyIsDown;
-//	std::map<int, bool> keyWasDown;
-//	int winWidth;
-//	int winHeight;
-//
-//	void mousePosition(GLFWwindow* windowPtr, double x, double y)
-//	{
-//		glfwGetWindowSize(windowPtr, &winWidth, &winHeight);
-//		mouseLoc.x = (x / (winWidth / 2)) - 1;
-//		mouseLoc.y = -((y / (winHeight / 2)) - 1);
-//	}
-//	void mouseClick(GLFWwindow* windowPtr, int button, int action, int mods)
-//	{
-//		keyIsDown[button] = action;
-//	}
-//	void keyCallback(GLFWwindow* windowPtr, int key, int scancode, int action, int mods)
-//	{
-//		/*if (keybinds.count(key) != 0)
-//		{
-//			(this->*keybinds[key])(action);
-//		}*/
-//		keyIsDown[key] = action;
-//	}
-//}
-
 Engine::Engine()
 {
-	inputManager = new InputManager(this);
+	//inputManager = new InputManager(this);
+	//cameraManager = CameraManager();
 }
 
 Engine::~Engine()
@@ -67,11 +38,6 @@ bool Engine::init()
 		return false;
 	}
 
-	/*glfwSetCursorPosCallback(getWindowPtr(), inputManager.mousePosition);
-	glfwSetMouseButtonCallback(getWindowPtr(), mouseClick);
-	glfwSetKeyCallback(getWindowPtr(), keyCallback);*/
-	inputManager->setInput();
-
 	// ----------------------------- Initialize a GLEW or Quit -----------------------------
 	if (glewInit() != GLEW_OK)
 	{
@@ -82,6 +48,19 @@ bool Engine::init()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	// ----------------------------- Initialize input handling -----------------------------
+	inputManager = new InputManager(this);
+
+	inputManager->initInput();
+
+	inputManager->setInputFunc(GLFW_KEY_SPACE, &Engine::update);
+	inputManager->setInputFunc(GLFW_KEY_ESCAPE, &Engine::Quit);
+	inputManager->setInputFunc(GLFW_MOUSE_BUTTON_1, &Engine::Fire);
+	inputManager->setInputFunc(GLFW_KEY_W, &Engine::MoveForward);
+	inputManager->setInputFunc(GLFW_KEY_S, &Engine::MoveBack);
+	inputManager->setInputFunc(GLFW_KEY_D, &Engine::MoveRight);
+	inputManager->setInputFunc(GLFW_KEY_A, &Engine::MoveLeft);
+	
 	return true;
 }
 
@@ -183,6 +162,8 @@ bool Engine::gameLoop()
 			objs["birdHigh"].active = true;
 		}
 
+		cameraManager.Update(deltaTime);
+
 		//Draw -----------
 		glClear(GL_COLOR_BUFFER_BIT); //Clear the canvas
 
@@ -226,15 +207,21 @@ bool Engine::gameLoop()
 				}
 				objs[objNames[i]].transform.objToWorld = locMat * rotMat * scaleMat;
 
+				glBindVertexArray(vertArr);
+
 				glEnableVertexAttribArray(2);
 				glUniformMatrix4fv(2, 1, GL_FALSE, &objs[objNames[i]].transform.objToWorld[0][0]);
 
-				glBindVertexArray(vertArr);
+				glEnableVertexAttribArray(3);
+				glUniformMatrix4fv(3, 1, GL_FALSE, &cameraManager.camera[0][0]);
+
+				//glBindVertexArray(vertArr);
 				if (textures.size() > 0)
 				{
 					glBindTexture(GL_TEXTURE_2D, textures[objs[objNames[i]].texture]);
 				}
 				glDrawArrays(GL_TRIANGLES, 0, vertCount);
+
 				glBindVertexArray(0); //Unbind object after drawing it
 			}
 		}
@@ -244,25 +231,8 @@ bool Engine::gameLoop()
 
 		//Process Input ------------
 		inputManager->ProcessInput();
-		/*keyWasDown = keyIsDown;
 
-		glfwPollEvents();
-
-		if (keyIsDown[GLFW_KEY_ESCAPE])
-		{
-			glfwSetWindowShouldClose(getWindowPtr(), GL_TRUE);
-		}
-		if (keyIsDown[GLFW_MOUSE_BUTTON_1] && !keyWasDown[GLFW_MOUSE_BUTTON_1])
-		{
-			objs["bullet"].body.velocity = glm::vec3();
-			objs["bullet"].transform.location = glm::vec3(objs["gun"].transform.location.x - objs["gun"].transform.scale.x, 
-													objs["gun"].transform.location.y + objs["gun"].transform.scale.y, 
-													objs["gun"].transform.location.z);
-			glm::vec3 trajectory =  mouseLoc - objs["bullet"].transform.location;
-			objs["bullet"].body.force = glm::normalize(trajectory) * 500.0f;
-
-			objs["bullet"].active = true;
-		}*/
+		AimCamera();
 	}
 
 	glfwTerminate();
@@ -270,9 +240,8 @@ bool Engine::gameLoop()
 	return true;
 }
 
-void Engine::update()
+void Engine::update(int keyState)
 {
-
 }
 
 bool Engine::useShaders()
@@ -353,4 +322,53 @@ void Engine::createObject(std::string name, char* texFile, vec3 location, vec3 r
 	objs[name] = obj;
 
 	uploadTexture(texFile);
+}
+
+void Engine::Quit(int keyState)
+{
+	glfwSetWindowShouldClose(GLFWwindowPtr, GL_TRUE);
+}
+
+void Engine::Fire(int keyState)
+{
+	objs["bullet"].body.velocity = glm::vec3();
+	objs["bullet"].transform.location = glm::vec3(objs["gun"].transform.location.x - objs["gun"].transform.scale.x,
+													objs["gun"].transform.location.y + objs["gun"].transform.scale.y,
+													objs["gun"].transform.location.z);
+	glm::vec3 trajectory = inputManager->mouseXY - objs["bullet"].transform.location;
+	objs["bullet"].body.force = glm::normalize(trajectory) * 10.0f;
+
+	objs["bullet"].active = true;
+}
+
+void Engine::MoveForward(int keyState)
+{
+	cameraManager.body.velocity += vec3(0, 0, -0.1f);
+}
+
+void Engine::MoveBack(int keyState)
+{
+	cameraManager.body.velocity += vec3(0, 0, 0.1f);
+}
+
+void Engine::MoveRight(int keyState)
+{
+	cameraManager.body.velocity += vec3(0.1f, 0, 0);
+}
+
+void Engine::MoveLeft(int keyState)
+{
+	cameraManager.body.velocity += vec3(-0.1f, 0, 0);
+}
+
+void Engine::AimCamera()
+{
+	double x, y;
+	glfwGetCursorPos(GLFWwindowPtr, &x, &y);
+
+	cameraManager.transform.rotation.y -= cameraManager.sens * (x - cameraManager.width * 0.5f); //Yaw
+	cameraManager.transform.rotation.x -= cameraManager.sens * (y - cameraManager.height * 0.5f); //Pitch
+	cameraManager.transform.rotation.x = glm::clamp(cameraManager.transform.rotation.x, -0.5f * 3.14159f, 0.5f * 3.14159f);
+
+	glfwSetCursorPos(GLFWwindowPtr, cameraManager.width * 0.5f, cameraManager.height * 0.5f);
 }

@@ -13,6 +13,7 @@
 #include "ShaderManager.h"
 #include "InputManager.h"
 #include "PhysicsManager.h"
+#include "CameraManager.h"
 #include "Vertex.h"
 #include "Object.h"
 
@@ -34,7 +35,7 @@ public:
 	bool init();
 	bool bufferModel();
 	bool gameLoop();
-	void update();
+	void update(int keyState);
 	bool useShaders();
 	void uploadTexture(char* texFile);
 	void createObject(std::string name, char* texFile, glm::vec3 location, glm::vec3 rotation, glm::vec3 scale, ScreenMode mode);
@@ -47,4 +48,12 @@ private:
 	ShaderManager shaderManager;
 	//PhysicsManager physicsManager;
 	InputManager* inputManager;
+	CameraManager cameraManager;
+	void Quit(int keyState);
+	void Fire(int keyState);
+	void MoveForward(int keyState);
+	void MoveBack(int keyState);
+	void MoveRight(int keyState);
+	void MoveLeft(int keyState);
+	void AimCamera();
 };

@@ -19,8 +19,8 @@ struct Shape
 	virtual Shape* Clone() { return new Shape; }
 	virtual void ComputeMass(Rigidbody* body, float density)
 	{
-		body->mass = 0.0f;
-		body->invMass = 0.0f;
+		body->mass = density;
+		body->invMass = (body->mass != 0.0f) ? 1.0f / body->mass : 0.0f;
 	}
 	virtual Type GetType() const
 	{
